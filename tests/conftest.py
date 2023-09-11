@@ -276,7 +276,7 @@ def random_person():
             'first_name': field('first_name'),
             'middle_name': field('first_name'),
             'last_name': field('person.last_name'),
-            'birth_date': field('datetime.date', start=1950, end=2003),
+            'birth_date': field('datetime.formatted_date', start=1950, end=2003),
             'confidential_ind': field('development.boolean'),
         },
         iterations=1 # TODO: Count input arg

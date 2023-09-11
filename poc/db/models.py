@@ -22,7 +22,7 @@ def get_db_url(host):
 class Person(Base):
     __tablename__ = "person"
 
-    pk = Column(Integer, Identity(start=1), primary_key=True)
+    id = Column(Integer, Identity(start=1), primary_key=True)
     uin = Column(Integer)
     first_name = Column(String())
     middle_name = Column(String())
@@ -38,8 +38,7 @@ class Person(Base):
     last_updated = Column(DateTime(), onupdate=datetime.utcnow)
     
     def __repr__(self):
-        return f"Person(identity_uin={self.uin!r}, " \
+        return f"Person(uin={self.uin!r}, " \
                f"first_name={self.first_name!r}, " \
-               f"middle_name={self.middle_name!r}), " \
-               f"last_name={self.last_name!r}), " \
-               f"suffix={self.suffix!r}), "
+               f"middle_name={self.middle_name!r}, " \
+               f"last_name={self.last_name!r}) "
