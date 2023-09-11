@@ -12,8 +12,18 @@ from docker.models.networks import Network
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from poc.models import get_db_url, Base
+from mimesis import Field, Schema
+from mimesis.locales import Locale
 
+from poc.db.models import get_db_url, Base
+
+
+# Add helper for data generator
+class DataGenerator:
+    def __init__(self):
+        pass
+        # Initialize Mimesis class
+        # Seed?
 
 logger = logging.getLogger()
 
@@ -254,3 +264,23 @@ def db_session(postgres, postgres_service_name):
     yield session
     session.close()
     Base.metadata.drop_all(bind=test_engine)
+
+
+@pytest.fixture(scope="function")
+def random_person():
+    field = Field(locale=Locale.EN)
+    # TODO: generate gender and personal pronounces
+    schema = Schema(
+        schema=lambda: {
+            'uin': field('numeric.integer_number', start=111111111, end=199999999),
+            'first_name': field('first_name'),
+            'middle_name': field('first_name'),
+            'last_name': field('person.last_name'),
+            'birth_date': field('datetime.date', start=1950, end=2003),
+            'confidential_ind': field('development.boolean'),
+        },
+        iterations=1 # TODO: Count input arg
+    )
+    
+    return schema.create()
+        

@@ -11,6 +11,8 @@ test-integration:
 
 clean:
 	rm -rf .pytest_cache
+	python3 -Bc "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]"
+	python3 -Bc "import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]"
 
 containers:
 	@echo $(CONTAINERS)

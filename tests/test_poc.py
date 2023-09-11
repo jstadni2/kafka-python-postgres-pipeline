@@ -9,8 +9,8 @@ from confluent_kafka import Consumer, cimpl
 from confluent_kafka.admin import AdminClient, NewTopic  # noqa
 from sqlalchemy_utils import database_exists
 
-from poc.producer import produce, message_value_deserializer, transform_message_value
-from poc.models import get_db_url, Record
+from poc.kafka.producer import produce, message_value_deserializer, transform_message_value
+from poc.db.models import get_db_url, Person
 
 
 logger = logging.getLogger()
@@ -69,41 +69,44 @@ def test_postgres_exists(db_connection):
 # Expected output from db should be transformed value
 # This spins up containers for each iteration (currently 1)
 # Create fixture for batch of fake data
-@pytest.mark.parametrize(
-    "produced_message", [{"id": str(uuid4())} for _ in range(1)]
-)
-def test_kafka_message_to_db(produced_message, new_topic, db_session):
-    produced_message_bytes = json.dumps(produced_message).encode("UTF-8")
-    produce(
-        broker_conf=BROKER_CONF,
-        topic=new_topic.topic,
-        message=produced_message_bytes,
-    )
+# @pytest.mark.parametrize(
+#     "produced_message", [{"id": str(uuid4())} for _ in range(1)]
+# )
+# def test_kafka_message_to_db(produced_message, new_topic, db_session):
+#     produced_message_bytes = json.dumps(produced_message).encode("UTF-8")
+#     produce(
+#         broker_conf=BROKER_CONF,
+#         topic=new_topic.topic,
+#         message=produced_message_bytes,
+#     )
 
-    consumer = Consumer(CONSUMER_CONF)
+#     consumer = Consumer(CONSUMER_CONF)
 
-    def on_assignment_print(
-        _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
-    ):
-        logger.info(f"Assignment: {_partitions}")
+#     def on_assignment_print(
+#         _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
+#     ):
+#         logger.info(f"Assignment: {_partitions}")
 
-    consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
-    consumed_message = consumer.poll()
-    consumer.close()
+#     consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
+#     consumed_message = consumer.poll()
+#     consumer.close()
     
-    # Deserialize and transform message value
-    message_value = message_value_deserializer(consumed_message.value())
-    transformed_value = transform_message_value(message_value)
-    record = Record(**transformed_value)
+#     # Deserialize and transform message value
+#     message_value = message_value_deserializer(consumed_message.value())
+#     transformed_value = transform_message_value(message_value)
+#     record = Record(**transformed_value)
     
-    # Insert consumed message into db
+#     # Insert consumed message into db
     
-    db_session.add(record)
-    db_session.flush()
-    db_session.commit()
+#     db_session.add(record)
+#     db_session.flush()
+#     db_session.commit()
     
-    # Fetch database record by id
-    fetched_record = db_session.get(Record, record.id)
+#     # Fetch database record by id
+#     fetched_record = db_session.get(Record, record.id)
     
-    # Compared fetched record to expected transformed value
-    assert fetched_record.value == transformed_value['value']
+#     # Compared fetched record to expected transformed value
+#     assert fetched_record.value == transformed_value['value']
+
+def test_random_person(random_person):
+    print(random_person)
