@@ -33,6 +33,9 @@ def test_topic_exists(kafka_admin_client: AdminClient, new_topic: NewTopic):
     assert new_topic.topic in topics.keys()
 
 
+# BUG: Test passes from test explorer and command line,
+# but fails on gutter decoration click,
+# creates dupe containers for each iteration
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "produced_message", [{"id": str(uuid4())} for _ in range(NUMBER_OF_MESSAGES)]
@@ -65,13 +68,16 @@ def test_postgres_exists(db_connection):
     assert database_exists(url)
 
 
-# Integration test
 # Expected output from db should be transformed value
-# This spins up containers for each iteration (currently 1)
-# Create fixture for batch of fake data
-def test_kafka_message_to_db(data_generator, new_topic, db_session):
-    random_person = data_generator.person(1)
-    random_person_bytes = json.dumps(random_person[0]).encode("UTF-8")
+# Use fixture for batch of fake data
+from .conftest import DataGenerator
+
+@pytest.mark.parametrize(
+    "random_person", DataGenerator.person(NUMBER_OF_MESSAGES)
+)
+@pytest.mark.integration
+def test_kafka_message_to_db(random_person, new_topic, db_session):
+    random_person_bytes = json.dumps(random_person).encode("UTF-8")
     produce(
         broker_conf=BROKER_CONF,
         topic=new_topic.topic,
