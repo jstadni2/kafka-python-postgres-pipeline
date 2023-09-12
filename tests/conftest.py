@@ -251,8 +251,8 @@ def postgres(
     postgres_container.remove(force=True)
 
 
-# Made scope configurable by test?
-@pytest.fixture(scope=determine_scope)
+# Make scope configurable by test?
+@pytest.fixture(scope="function")
 def db_connection(postgres, postgres_service_name):
     """SQLAlchemy connection for an empty database.
 
