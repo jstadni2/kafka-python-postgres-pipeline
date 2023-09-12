@@ -117,5 +117,9 @@ def test_kafka_message_to_db(random_person, new_topic, db_session):
         else:
             assert fetched_value == expected_value
 
+
+@pytest.mark.parametrize(
+    "random_person", DataGenerator.person(1)
+)
 def test_random_person(random_person):
     print(random_person)
