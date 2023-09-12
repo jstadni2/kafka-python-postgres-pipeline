@@ -69,7 +69,8 @@ def test_postgres_exists(db_connection):
 # Expected output from db should be transformed value
 # This spins up containers for each iteration (currently 1)
 # Create fixture for batch of fake data
-def test_kafka_message_to_db(random_person, new_topic, db_session):
+def test_kafka_message_to_db(data_generator, new_topic, db_session):
+    random_person = data_generator.person(1)
     random_person_bytes = json.dumps(random_person[0]).encode("UTF-8")
     produce(
         broker_conf=BROKER_CONF,
