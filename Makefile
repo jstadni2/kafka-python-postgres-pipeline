@@ -29,7 +29,12 @@ pull-zk:
 	docker pull confluentinc/cp-zookeeper:7.5.0
 
 pull-server:
-	docker pull confluentinc/cp-server:7.5.0   
+	docker pull confluentinc/cp-server:7.5.0
+
+pull-postgres:
+	docker pull postgres:15.4
+
+pull-services: pull-zk pull-server pull-postgres
 
 # Docker image troubleshooting
 
