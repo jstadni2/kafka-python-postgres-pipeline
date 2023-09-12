@@ -26,18 +26,15 @@ clean-docker:
 # TODO: Get docker-compose to work in lieu of these targets 
 
 pull-zk:
-	docker pull confluentinc/cp-zookeeper:6.2.0
+	docker pull confluentinc/cp-zookeeper:7.5.0
 
 pull-server:
-	docker pull confluentinc/cp-server:6.2.0   
+	docker pull confluentinc/cp-server:7.5.0   
 
 # Docker image troubleshooting
 
 postgres-run:
 	docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres:15.4
-
-postgres-run:
-	docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres:15.4 
 
 postgres-psql:
 	docker run -it --rm --network some-network postgres psql -h some-postgres -U postgres:15.4
