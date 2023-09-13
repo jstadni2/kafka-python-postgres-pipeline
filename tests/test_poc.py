@@ -72,50 +72,48 @@ def test_produce_consume(produced_message: Dict[str, str], new_topic: NewTopic):
 # Use fixture for batch of fake data
 from .conftest import DataGenerator
 
-@pytest.mark.parametrize(
-    "random_person", DataGenerator.person(NUMBER_OF_MESSAGES)
-)
 @pytest.mark.integration
-def test_kafka_message_to_db(random_person, new_topic, db_session):
-    random_person_bytes = json.dumps(random_person).encode("UTF-8")
-    produce(
-        broker_conf=BROKER_CONF,
-        topic=new_topic.topic,
-        message=random_person_bytes,
-    )
+def test_kafka_message_to_db(new_topic, db_session):
+    for random_person in DataGenerator.person(NUMBER_OF_MESSAGES):
+        random_person_bytes = json.dumps(random_person).encode("UTF-8")
+        produce(
+            broker_conf=BROKER_CONF,
+            topic=new_topic.topic,
+            message=random_person_bytes,
+        )
 
-    consumer = Consumer(CONSUMER_CONF)
+        consumer = Consumer(CONSUMER_CONF)
 
-    def on_assignment_print(
-        _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
-    ):
-        logger.info(f"Assignment: {_partitions}")
+        def on_assignment_print(
+            _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
+        ):
+            logger.info(f"Assignment: {_partitions}")
 
-    consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
-    consumed_message = consumer.poll()
-    consumer.close()
-    
-    # Deserialize and transform message value
-    message_value = message_value_deserializer(consumed_message.value())
-    # transformed_value = transform_message_value(message_value)
-    record = Person(**message_value)
-    
-    # Insert consumed message into db
-    db_session.add(record)
-    db_session.flush()
-    db_session.commit()
-    
-    # Fetch database record by id
-    fetched_record = db_session.get(Person, record.id)
-    
-    # Compare fetched record to expected transformed value
-    for key in message_value.keys():
-        fetched_value = getattr(fetched_record, key)
-        expected_value = message_value[key]
-        if key == 'birth_date':
-            assert fetched_value.strftime('%m/%d/%Y') == expected_value
-        else:
-            assert fetched_value == expected_value
+        consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
+        consumed_message = consumer.poll()
+        consumer.close()
+        
+        # Deserialize and transform message value
+        message_value = message_value_deserializer(consumed_message.value())
+        # transformed_value = transform_message_value(message_value)
+        record = Person(**message_value)
+        
+        # Insert consumed message into db
+        db_session.add(record)
+        db_session.flush()
+        db_session.commit()
+        
+        # Fetch database record by id
+        fetched_record = db_session.get(Person, record.id)
+        
+        # Compare fetched record to expected transformed value
+        for key in message_value.keys():
+            fetched_value = getattr(fetched_record, key)
+            expected_value = message_value[key]
+            if key == 'birth_date':
+                assert fetched_value.strftime('%m/%d/%Y') == expected_value
+            else:
+                assert fetched_value == expected_value
 
 
 @pytest.mark.parametrize(
