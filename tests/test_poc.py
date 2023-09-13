@@ -63,11 +63,11 @@ def test_produce_consume(produced_message: Dict[str, str], new_topic: NewTopic):
 
 # This test fails if it's run after another postgres test
 # Error probably comes from fixture scope
-# @pytest.mark.component
-# def test_db_exists(db_connection):
-#     DB_HOST = getenv("DB_HOST")
-#     url = get_db_url(DB_HOST)
-#     assert database_exists(url)
+@pytest.mark.component
+def test_db_exists(db_connection):
+    DB_HOST = getenv("DB_HOST")
+    url = get_db_url(DB_HOST)
+    assert database_exists(url)
 
 
 # Expected output from db should be transformed value
