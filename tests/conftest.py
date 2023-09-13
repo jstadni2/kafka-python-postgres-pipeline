@@ -14,7 +14,11 @@ from mimesis.locales import Locale
 from poc.db.models import get_db_url, Base
 
 
-# Add helper for data generator
+LOCAL_PORT = getenv("LOCAL_PORT")
+DB_HOST = getenv("DB_HOST")
+
+logger = logging.getLogger()
+
 class DataGenerator:
     @staticmethod
     def person(count):
@@ -31,41 +35,12 @@ class DataGenerator:
             },
             iterations=count
         )
-        
         return schema.create()
 
 
 @pytest.fixture
 def data_generator():
     return DataGenerator
-
-logger = logging.getLogger()
-
-LOCAL_PORT = getenv("LOCAL_PORT")
-DB_HOST = getenv("DB_HOST")
-# DB_URL = getenv("DB_URL")
-
-
-# def pytest_addoption(parser):
-#     parser.addoption("--fixture_scope")
-
-
-# def determine_scope(fixture_name, config):
-#     fixture_scope = config.getoption("--fixture_scope")
-#     if fixture_scope is None:
-#         fixture_scope = "session"
-#     if fixture_scope in [
-#         "function",
-#         "class",
-#         "module",
-#         "package",
-#         "session",
-#     ]:
-#         return fixture_scope
-#     else:
-#         raise ValueError(
-#             "Usage: pytest tests/ --fixture_scope=function|class|module|package|session"
-#         )
 
 
 @pytest.fixture(scope="session")
@@ -86,7 +61,6 @@ def consumer_id(resource_postfix: str) -> str:
 @pytest.fixture(scope="session")
 def kafka_admin_client() -> AdminClient:
     admin_client = AdminClient(conf={"bootstrap.servers": f"0.0.0.0:{LOCAL_PORT}"})
-
     return admin_client
 
 
@@ -109,19 +83,13 @@ def new_topic(kafka_admin_client: AdminClient, topic_name: str) -> NewTopic:
     kafka_admin_client.delete_topics(topics=[new_topic.topic])
 
 
-@pytest.fixture(scope="session")
-def postgres_service_name(resource_postfix: str):
-    return f"postgres-{resource_postfix}"
-
-
 @pytest.fixture(scope="function")
-def db_connection(postgres_service_name):
+def db_connection():
     """SQLAlchemy connection for an empty database.
 
     Yields:
         _type_: _description_
     """
-    # TODO: successfully call get_db_url on network/container
     test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     connection = test_engine.connect()
@@ -131,13 +99,12 @@ def db_connection(postgres_service_name):
 
 
 @pytest.fixture(scope="function")
-def db_session(postgres_service_name):
-    """SQLAlchemy connection for an empty database.
+def db_session():
+    """SQLAlchemy session for an empty database.
 
     Yields:
         _type_: _description_
     """
-    # TODO: successfully call get_db_url on network/container
     test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     Session = scoped_session(sessionmaker(bind=test_engine))

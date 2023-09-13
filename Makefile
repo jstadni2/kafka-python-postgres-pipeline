@@ -10,10 +10,10 @@ down:
 	docker-compose down
 
 test-component:
-	pytest -m component tests/ --fixture_scope=session
+	pytest -m component tests/
 
 test-integration:
-	pytest -m integration tests/ --fixture_scope=session
+	pytest -m integration tests/
 
 clean:
 	rm -rf .pytest_cache
