@@ -37,6 +37,6 @@ jobs:
     - name: Pull images for services
       run: |
         make pull-services
-    - name: Integration tests with pytest
+    - name: Test with pytest
       run: |
-        pytest -m integration tests
+        pytest
