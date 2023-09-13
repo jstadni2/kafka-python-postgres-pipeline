@@ -3,12 +3,8 @@ from os import getenv
 from time import sleep
 from uuid import uuid4
 
-import docker
 import pytest
 from confluent_kafka.admin import AdminClient, NewTopic  # noqa
-from docker.client import DockerClient
-from docker.models.containers import Container
-from docker.models.networks import Network
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -84,11 +80,6 @@ def topic_name(resource_postfix: str) -> str:
 @pytest.fixture(scope="session")
 def consumer_id(resource_postfix: str) -> str:
     return f"demo-consumer-{resource_postfix}"
-
-
-@pytest.fixture(scope="session")
-def docker_client() -> DockerClient:
-    return docker.from_env()
 
 
 @pytest.fixture(scope="session")
