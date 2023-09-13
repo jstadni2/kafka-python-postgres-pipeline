@@ -259,7 +259,7 @@ def db_connection(postgres, postgres_service_name):
         _type_: _description_
     """
     # TODO: successfully call get_db_url on network/container
-    test_engine = create_engine(get_db_url(postgres_service_name))
+    test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     connection = test_engine.connect()
     yield connection
@@ -275,7 +275,7 @@ def db_session(postgres, postgres_service_name):
         _type_: _description_
     """
     # TODO: successfully call get_db_url on network/container
-    test_engine = create_engine(get_db_url(postgres_service_name))
+    test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     Session = scoped_session(sessionmaker(bind=test_engine))
     session = Session()
