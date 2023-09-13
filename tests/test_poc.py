@@ -60,12 +60,12 @@ def test_produce_consume(produced_message: Dict[str, str], new_topic: NewTopic):
     assert consumed_message.value() == produced_message_bytes
     consumer.close()
 
-# Fixture setup fails if a db fixture with session scope already exists
-# @pytest.mark.component
-# def test_postgres_exists(db_connection):
-#     DB_HOST = getenv("DB_HOST")
-#     url = get_db_url(DB_HOST)
-#     assert database_exists(url)
+
+@pytest.mark.component
+def test_postgres_exists(db_connection):
+    DB_HOST = getenv("DB_HOST")
+    url = get_db_url(DB_HOST)
+    assert database_exists(url)
 
 
 # Expected output from db should be transformed value
