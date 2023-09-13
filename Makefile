@@ -3,6 +3,12 @@ CONTAINERS := $(shell docker ps -a -q)
 # All targets are phony
 .PHONY: *
 
+up:
+	docker-compose up -d
+
+down:
+	docker-compose down
+
 test-component:
 	pytest -m component tests/ --fixture_scope=session
 
