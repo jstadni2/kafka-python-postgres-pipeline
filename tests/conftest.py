@@ -61,143 +61,56 @@ DB_HOST = getenv("DB_HOST")
 DB_URL = getenv("DB_URL")
 
 
-def pytest_addoption(parser):
-    parser.addoption("--fixture_scope")
+# def pytest_addoption(parser):
+#     parser.addoption("--fixture_scope")
 
 
-def determine_scope(fixture_name, config):
-    fixture_scope = config.getoption("--fixture_scope")
-    if fixture_scope is None:
-        fixture_scope = "session"
-    if fixture_scope in [
-        "function",
-        "class",
-        "module",
-        "package",
-        "session",
-    ]:
-        return fixture_scope
-    else:
-        raise ValueError(
-            "Usage: pytest tests/ --fixture_scope=function|class|module|package|session"
-        )
+# def determine_scope(fixture_name, config):
+#     fixture_scope = config.getoption("--fixture_scope")
+#     if fixture_scope is None:
+#         fixture_scope = "session"
+#     if fixture_scope in [
+#         "function",
+#         "class",
+#         "module",
+#         "package",
+#         "session",
+#     ]:
+#         return fixture_scope
+#     else:
+#         raise ValueError(
+#             "Usage: pytest tests/ --fixture_scope=function|class|module|package|session"
+#         )
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def resource_postfix() -> str:
     return str(uuid4()).partition("-")[0]
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def topic_name(resource_postfix: str) -> str:
     return f"demo-topic-{resource_postfix}"
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def consumer_id(resource_postfix: str) -> str:
     return f"demo-consumer-{resource_postfix}"
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def docker_client() -> DockerClient:
     return docker.from_env()
 
 
-@pytest.fixture(scope=determine_scope)
-def network(docker_client: DockerClient, resource_postfix: str) -> Network:
-    _network = docker_client.networks.create(name=f"network-{resource_postfix}")
-    yield _network
-    _network.remove()
-
-
-@pytest.fixture(scope=determine_scope)
-def zookeeper(
-    docker_client: DockerClient, network: Network, resource_postfix: str
-) -> Container:
-    logging.info(f"Pulling {ZOOKEEPER_IMAGE_NAME}")
-    docker_client.images.get(name=ZOOKEEPER_IMAGE_NAME)
-    logging.info(f"Starting container zookeeper-{resource_postfix}")
-
-    zookeeper_container = docker_client.containers.run(
-        image=ZOOKEEPER_IMAGE_NAME,
-        ports={f"{ZOOKEEPER_CLIENT_PORT}/tcp": f"{ZOOKEEPER_CLIENT_PORT}/tcp"},
-        network=network.name,
-        name=f"zookeeper-{resource_postfix}",
-        hostname="zookeeper",
-        environment={"ZOOKEEPER_CLIENT_PORT": ZOOKEEPER_CLIENT_PORT},
-        detach=True,
-    )
-    logging.info(f"Container zookeeper-{resource_postfix} started")
-    yield zookeeper_container
-    zookeeper_container.remove(force=True)
-
-
-@pytest.fixture(scope=determine_scope)
-def broker(
-    docker_client: DockerClient,
-    network: Network,
-    zookeeper: Container,
-    resource_postfix: str,
-) -> Container:
-    logging.info(f"Pulling {KAFKA_IMAGE_NAME}")
-    docker_client.images.get(name=KAFKA_IMAGE_NAME)
-    logging.info(f"Starting container broker-{resource_postfix}")
-    broker_container = docker_client.containers.run(
-        image=KAFKA_IMAGE_NAME,
-        ports={
-            f"{BROKER_PORT}/tcp": f"{BROKER_PORT}/tcp",
-            f"{LOCAL_PORT}/tcp": f"{LOCAL_PORT}/tcp",
-        },
-        network=network.name,
-        name=f"broker-{resource_postfix}",
-        hostname="broker",
-        environment={
-            "KAFKA_BROKER_ID": 25,
-            "KAFKA_ZOOKEEPER_CONNECT": f"{zookeeper.name}:{ZOOKEEPER_CLIENT_PORT}",
-            "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
-            "KAFKA_ADVERTISED_LISTENERS": f"PLAINTEXT://broker:{BROKER_PORT},PLAINTEXT_HOST://localhost:{LOCAL_PORT}",
-            "KAFKA_METRIC_REPORTERS": "io.confluent.metrics.reporter.ConfluentMetricsReporter",
-            "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": 1,
-            "KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS": 0,
-            "KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR": 1,
-            "KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR": 1,
-            "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR": 1,
-            "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR": 1,
-            "KAFKA_JMX_PORT": 9101,
-            "KAFKA_JMX_HOSTNAME": "localhost",
-            "CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS": f"broker:{BROKER_PORT}",
-            "CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS": 1,
-            "CONFLUENT_METRICS_ENABLE": "true",
-            "CONFLUENT_SUPPORT_CUSTOMER_ID": "anonymous",
-        },
-        detach=True,
-    )
-    logging.info(f"Container broker-{resource_postfix} started")
-    yield broker_container
-    broker_container.remove(force=True)
-
-
-@pytest.fixture(scope=determine_scope)
-def kafka_admin_client(broker: Container) -> AdminClient:
-    has_started = False
-    kafka_logs = set()
-    while not has_started:
-        log_line = broker.logs(tail=1).decode("UTF-8").strip()
-        if log_line in kafka_logs:
-            pass
-        else:
-            kafka_logs.add(log_line)
-            logger.info(log_line)
-        if "INFO Kafka startTimeMs" in log_line:
-            has_started = True
-            logging.info("Kafka has started")
-
+@pytest.fixture(scope="session")
+def kafka_admin_client() -> AdminClient:
     admin_client = AdminClient(conf={"bootstrap.servers": f"0.0.0.0:{LOCAL_PORT}"})
 
     return admin_client
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def new_topic(kafka_admin_client: AdminClient, topic_name: str) -> NewTopic:
     new_topic = NewTopic(
         topic=topic_name,
@@ -216,44 +129,13 @@ def new_topic(kafka_admin_client: AdminClient, topic_name: str) -> NewTopic:
     kafka_admin_client.delete_topics(topics=[new_topic.topic])
 
 
-@pytest.fixture(scope=determine_scope)
+@pytest.fixture(scope="session")
 def postgres_service_name(resource_postfix: str):
     return f"postgres-{resource_postfix}"
 
 
-@pytest.fixture(scope=determine_scope)
-def postgres(
-    docker_client: DockerClient,
-    network: Network,
-    postgres_service_name: str
-    )-> Container:
-    logging.info(f"Pulling {POSTGRES_IMAGE_NAME}")
-    docker_client.images.get(name=POSTGRES_IMAGE_NAME)
-    logging.info(f"Starting container {postgres_service_name}")
-
-    postgres_container = docker_client.containers.run(
-        image=POSTGRES_IMAGE_NAME,
-        ports={f"{POSTGRES_PORT}": f"{POSTGRES_PORT}"},
-        network=network.name,
-        name=postgres_service_name,
-        hostname=postgres_service_name,  # use this?
-        environment={"POSTGRES_PORT": POSTGRES_PORT,
-                     "POSTGRES_USER": POSTGRES_USER,
-                     "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
-                     "POSTGRES_DB": POSTGRES_DB,
-                    # "PGDATA": "/var/lib/postgresql/data/pgdata",
-                    },
-        detach=True,
-    )
-    sleep(1)
-    logging.info(f"Container {postgres_service_name} started")
-    
-    yield postgres_container
-    postgres_container.remove(force=True)
-
-
 @pytest.fixture(scope="function")
-def db_connection(postgres, postgres_service_name):
+def db_connection(postgres_service_name):
     """SQLAlchemy connection for an empty database.
 
     Yields:
@@ -269,7 +151,7 @@ def db_connection(postgres, postgres_service_name):
 
 
 @pytest.fixture(scope="function")
-def db_session(postgres, postgres_service_name):
+def db_session(postgres_service_name):
     """SQLAlchemy connection for an empty database.
 
     Yields:
