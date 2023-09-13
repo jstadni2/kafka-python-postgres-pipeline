@@ -33,9 +33,6 @@ def test_topic_exists(kafka_admin_client: AdminClient, new_topic: NewTopic):
     assert new_topic.topic in topics.keys()
 
 
-# BUG: Test passes from test explorer and command line,
-# but fails on gutter decoration click,
-# creates dupe containers for each iteration
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "produced_message", [{"id": str(uuid4())} for _ in range(NUMBER_OF_MESSAGES)]
@@ -61,8 +58,6 @@ def test_produce_consume(produced_message: Dict[str, str], new_topic: NewTopic):
     consumer.close()
 
 
-# This test fails if it's run after another postgres test
-# Error probably comes from fixture scope
 @pytest.mark.component
 def test_db_exists(db_connection):
     DB_HOST = getenv("DB_HOST")

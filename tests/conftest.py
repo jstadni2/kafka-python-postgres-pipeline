@@ -42,7 +42,8 @@ def data_generator():
 logger = logging.getLogger()
 
 LOCAL_PORT = getenv("LOCAL_PORT")
-DB_URL = getenv("DB_URL")
+DB_HOST = getenv("DB_HOST")
+# DB_URL = getenv("DB_URL")
 
 
 # def pytest_addoption(parser):
@@ -121,7 +122,7 @@ def db_connection(postgres_service_name):
         _type_: _description_
     """
     # TODO: successfully call get_db_url on network/container
-    test_engine = create_engine(DB_URL)
+    test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     connection = test_engine.connect()
     yield connection
@@ -137,7 +138,7 @@ def db_session(postgres_service_name):
         _type_: _description_
     """
     # TODO: successfully call get_db_url on network/container
-    test_engine = create_engine(DB_URL)
+    test_engine = create_engine(get_db_url(DB_HOST))
     Base.metadata.create_all(test_engine)
     Session = scoped_session(sessionmaker(bind=test_engine))
     session = Session()

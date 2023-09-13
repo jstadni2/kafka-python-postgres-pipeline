@@ -28,19 +28,6 @@ clean-docker:
 	docker stop $(CONTAINERS)
 	docker system prune -f
 
-# Pulling these images actually got the test suites to work
-# TODO: Get docker-compose to work in lieu of these targets 
-
-pull-zk:
-	docker pull confluentinc/cp-zookeeper:7.5.0
-
-pull-server:
-	docker pull confluentinc/cp-server:7.5.0
-
-pull-postgres:
-	docker pull postgres:15.4
-
-pull-services: pull-zk pull-server pull-postgres
 
 # Docker image troubleshooting
 
