@@ -1,16 +1,17 @@
 import json
 import logging
 from os import getenv
-from typing import Dict, List
+from typing import Dict
 from uuid import uuid4
 
 import pytest
-from confluent_kafka import Consumer, cimpl
 from confluent_kafka.admin import AdminClient, NewTopic  # noqa
 from sqlalchemy_utils import database_exists
 
 from poc.kafka.producer import produce, message_value_deserializer, transform_message_value
+from poc.kafka.consumer import consume_message
 from poc.db.models import get_db_url, Person
+from .conftest import DataGenerator
 
 
 logger = logging.getLogger()
@@ -45,17 +46,8 @@ def test_produce_consume(produced_message: Dict[str, str], new_topic: NewTopic):
         message=produced_message_bytes,
     )
 
-    consumer = Consumer(CONSUMER_CONF)
-
-    def on_assignment_print(
-        _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
-    ):
-        logger.info(f"Assignment: {_partitions}")
-
-    consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
-    consumed_message = consumer.poll()
+    consumed_message = consume_message(CONSUMER_CONF, new_topic, logger)
     assert consumed_message.value() == produced_message_bytes
-    consumer.close()
 
 
 @pytest.mark.component
@@ -66,9 +58,6 @@ def test_db_exists(db_connection):
 
 
 # Expected output from db should be transformed value
-# Use fixture for batch of fake data
-from .conftest import DataGenerator
-
 @pytest.mark.integration
 def test_kafka_message_to_db(new_topic, db_session):
     for random_person in DataGenerator.person(NUMBER_OF_MESSAGES):
@@ -79,16 +68,7 @@ def test_kafka_message_to_db(new_topic, db_session):
             message=random_person_bytes,
         )
 
-        consumer = Consumer(CONSUMER_CONF)
-
-        def on_assignment_print(
-            _consumer: cimpl.Consumer, _partitions: List[cimpl.TopicPartition]
-        ):
-            logger.info(f"Assignment: {_partitions}")
-
-        consumer.subscribe(topics=[new_topic.topic], on_assign=on_assignment_print)
-        consumed_message = consumer.poll()
-        consumer.close()
+        consumed_message = consume_message(CONSUMER_CONF, new_topic, logger)
         
         # Deserialize and transform message value
         message_value = message_value_deserializer(consumed_message.value())
